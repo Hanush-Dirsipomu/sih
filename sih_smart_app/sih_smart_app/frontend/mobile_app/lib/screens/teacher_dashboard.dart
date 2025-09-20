@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_app/components/custom_loading_indicator.dart';
 import 'package:mobile_app/screens/attendance_action_screen.dart';
 import 'package:mobile_app/screens/login_screen.dart';
+import 'package:mobile_app/screens/teacher_semester_overview.dart';
 import 'package:mobile_app/screens/view_attendance_screen.dart';
 import 'package:mobile_app/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -58,7 +59,26 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Today's Schedule"),
-        actions: [IconButton(icon: const Icon(Icons.logout), onPressed: _logout)],
+        backgroundColor: const Color(0xFF4A69FF),
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.analytics_outlined),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const TeacherSemesterOverview(),
+                ),
+              );
+            },
+            tooltip: 'Semester Overview',
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _logout,
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _refreshTimetable,
