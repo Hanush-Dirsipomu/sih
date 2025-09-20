@@ -5,13 +5,29 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_migrate import Migrate
 from werkzeug.utils import secure_filename
-from deepface import DeepFace
 from config import Config
 from models import db, User, Institution, Branch, Semester, Subject, ClassSchedule, AttendanceRecord
 from admin_routes import admin_bp
 from auth import AuthManager, jwt_required
 from datetime import time, datetime, date
-import google.generativeai as genai
+
+# Import TensorFlow/DeepFace only when needed (lazy loading)
+DeepFace = None
+genai = None
+
+def load_deepface():
+    global DeepFace
+    if DeepFace is None:
+        from deepface import DeepFace as df
+        DeepFace = df
+    return DeepFace
+
+def load_genai():
+    global genai
+    if genai is None:
+        import google.generativeai as genai_module
+        genai = genai_module
+    return genai
 
 UPLOAD_FOLDER = 'uploads'
 KNOWN_FACES_DIR = 'known_faces'
@@ -42,8 +58,9 @@ def create_app():
                 return "1. Review today's class notes and prepare for upcoming sessions. 2. Work on assignments and projects."
         
         try:
-            genai.configure(api_key=GEMINI_API_KEY)
-            model = genai.GenerativeModel('gemini-1.5-flash-latest')
+            genai_module = load_genai()
+            genai_module.configure(api_key=GEMINI_API_KEY)
+            model = genai_module.GenerativeModel('gemini-1.5-flash-latest')
             response = model.generate_content(prompt)
             return response.text.replace('*', '').replace('#', '')
         except Exception as e:
@@ -313,7 +330,8 @@ def create_app():
         filepath = os.path.join(UPLOAD_FOLDER, filename)
         file.save(filepath)
         try:
-            dfs = DeepFace.find(img_path=filepath, db_path=KNOWN_FACES_DIR, enforce_detection=False)
+            deepface = load_deepface()
+            dfs = deepface.find(img_path=filepath, db_path=KNOWN_FACES_DIR, enforce_detection=False)
             present_students = set()
             for df in dfs:
                 if not df.empty:
