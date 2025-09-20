@@ -4,6 +4,9 @@ from models import db, User, Institution, Branch, Semester, Subject, ClassSchedu
 from auth import admin_required, jwt_required, get_user_institution_id, AuthManager
 from datetime import datetime, time
 import uuid
+from security_config import validate_password, InputValidator, SecurityConfig
+from file_processor import FileProcessor
+import os
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -552,3 +555,131 @@ def get_dashboard_stats():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# FILE UPLOAD ENDPOINTS
+@admin_bp.route('/upload/students', methods=['POST'])
+@admin_required
+def upload_students_file():
+    """Upload and process students CSV/Excel file"""
+    institution_id, error_response, status_code = get_current_user_institution()
+    if error_response:
+        return error_response, status_code
+    
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    try:
+        # Initialize file processor
+        upload_folder = os.path.join(os.getcwd(), 'uploads')
+        if not os.path.exists(upload_folder):
+            os.makedirs(upload_folder)
+        
+        processor = FileProcessor(upload_folder)
+        
+        # Save and process file
+        filepath, save_error = processor.save_uploaded_file(file)
+        if save_error:
+            return jsonify({'error': save_error}), 400
+        
+        # Process the file
+        results, process_error = processor.process_students_file(filepath, institution_id)
+        
+        # Clean up file
+        processor.cleanup_file(filepath)
+        
+        if process_error:
+            return jsonify({'error': process_error}), 400
+        
+        return jsonify({
+            'message': 'Students file processed successfully',
+            'results': results
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'File processing failed: {str(e)}'}), 500
+
+@admin_bp.route('/upload/teachers', methods=['POST'])
+@admin_required
+def upload_teachers_file():
+    """Upload and process teachers CSV/Excel file"""
+    institution_id, error_response, status_code = get_current_user_institution()
+    if error_response:
+        return error_response, status_code
+    
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    try:
+        upload_folder = os.path.join(os.getcwd(), 'uploads')
+        if not os.path.exists(upload_folder):
+            os.makedirs(upload_folder)
+        
+        processor = FileProcessor(upload_folder)
+        
+        filepath, save_error = processor.save_uploaded_file(file)
+        if save_error:
+            return jsonify({'error': save_error}), 400
+        
+        results, process_error = processor.process_teachers_file(filepath, institution_id)
+        
+        processor.cleanup_file(filepath)
+        
+        if process_error:
+            return jsonify({'error': process_error}), 400
+        
+        return jsonify({
+            'message': 'Teachers file processed successfully',
+            'results': results
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'File processing failed: {str(e)}'}), 500
+
+@admin_bp.route('/upload/timetable', methods=['POST'])
+@admin_required
+def upload_timetable_file():
+    """Upload and process timetable CSV/Excel file"""
+    institution_id, error_response, status_code = get_current_user_institution()
+    if error_response:
+        return error_response, status_code
+    
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    try:
+        upload_folder = os.path.join(os.getcwd(), 'uploads')
+        if not os.path.exists(upload_folder):
+            os.makedirs(upload_folder)
+        
+        processor = FileProcessor(upload_folder)
+        
+        filepath, save_error = processor.save_uploaded_file(file)
+        if save_error:
+            return jsonify({'error': save_error}), 400
+        
+        results, process_error = processor.process_timetable_file(filepath, institution_id)
+        
+        processor.cleanup_file(filepath)
+        
+        if process_error:
+            return jsonify({'error': process_error}), 400
+        
+        return jsonify({
+            'message': 'Timetable file processed successfully',
+            'results': results
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'File processing failed: {str(e)}'}), 500

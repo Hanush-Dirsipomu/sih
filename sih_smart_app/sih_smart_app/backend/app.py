@@ -10,6 +10,7 @@ from models import db, User, Institution, Branch, Semester, Subject, ClassSchedu
 from admin_routes import admin_bp
 from auth import AuthManager, jwt_required
 from datetime import time, datetime, date
+from security_config import create_limiter, configure_security_headers, validate_password, InputValidator
 
 # Import TensorFlow/DeepFace only when needed (lazy loading)
 DeepFace = None
@@ -39,9 +40,18 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+    app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+    
+    # Initialize database and migration
     db.init_app(app)
     Migrate(app, db)
-    CORS(app)
+    
+    # Configure CORS with security
+    CORS(app, origins=['http://localhost:*', 'http://127.0.0.1:*'], supports_credentials=True)
+    
+    # Configure security features
+    limiter = create_limiter(app)
+    configure_security_headers(app)
     
     # Register admin blueprint
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
@@ -95,11 +105,25 @@ def create_app():
         return register_institution()
 
     @app.route('/api/login', methods=['POST'])
+    @limiter.limit("5 per minute")
     def login():
-        data = request.get_json()
-        
-        # Find user by college_id (can be from any institution)
-        user = User.query.filter_by(college_id=data.get('college_id')).first()
+        try:
+            data = request.get_json()
+            
+            # Validate input
+            if not data or not data.get('college_id') or not data.get('password'):
+                return jsonify({"message": "College ID and password are required"}), 400
+            
+            college_id = data.get('college_id').strip()
+            password = data.get('password')
+            
+            # Input validation
+            valid_id, id_error = InputValidator.validate_college_id(college_id)
+            if not valid_id:
+                return jsonify({"message": "Invalid college ID format"}), 400
+            
+            # Find user by college_id (can be from any institution)
+            user = User.query.filter_by(college_id=college_id).first()
         
         if user and user.check_password(data.get('password')):
             if not user.is_active:
@@ -132,6 +156,9 @@ def create_app():
             return jsonify(response), 200
             
         return jsonify({"message": "Invalid credentials"}), 401
+        
+        except Exception as e:
+            return jsonify({"message": "Login failed. Please try again."}), 500
     
     @app.route('/api/student/<int:user_id>/profile', methods=['POST'])
     @jwt_required(roles=['student', 'admin'])

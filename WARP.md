@@ -1,14 +1,15 @@
-# WARP.md
+# WARP.md - Smart Attendance System
 
-This file provides guidance to WARP (warp.dev) when working with code in this repository.
+This file provides guidance to WARP (warp.dev) when working with the Smart Attendance System codebase.
 
 ## Project Overview
 
-This repository contains a **complete multi-institutional Smart Attendance System** for educational institutions, developed for the Smart India Hackathon (SIH). The project is enterprise-ready with:
+This repository contains a **complete Smart Attendance System** developed for the Smart India Hackathon (SIH), featuring real college data integration and production-ready architecture:
 
-1. **Backend**: Flask API with JWT authentication, face recognition, AI integration, and multi-institutional support
-2. **Frontend**: Flutter mobile app with comprehensive admin dashboard for complete institution management
-3. **Features**: Any college can register, create dynamic academic structures, and manage their own attendance system
+1. **Backend**: Flask API with JWT authentication, face recognition, AI integration, and comprehensive admin management
+2. **Frontend**: Flutter mobile app with professional UI and complete functionality
+3. **Real Data**: Integrated with actual CSE department timetable, faculty, and student data
+4. **Project Review Ready**: Clean, professional interface perfect for demonstrations
 
 ## Development Environment Setup
 
@@ -45,13 +46,24 @@ flutter run
 
 ```bash
 cd sih_smart_app/sih_smart_app/backend
+
 # Install dependencies
-pip install -r requirements.txt
-pip install PyJWT google-generativeai
+pip install flask flask-sqlalchemy flask-migrate flask-cors
+pip install deepface tensorflow PyJWT google-generativeai
+pip install werkzeug pillow
+
+# Initialize database with real college data (IMPORTANT!)
+python init_college_data.py
 
 # Run server
 python app.py
 ```
+
+**Note**: The `init_college_data.py` script populates your database with:
+- CSE Department structure based on the provided timetable
+- All teachers from the actual timetable (Dr. B M V Narasimha Raju, etc.)
+- Complete Semester 3 subjects and class schedules
+- Sample students enrolled and ready for testing
 
 #### Database Management
 
@@ -67,13 +79,23 @@ flask db upgrade   # Apply migration
 #### Testing JWT Authentication
 
 ```bash
-# Login to get JWT token
+# Admin Login (Full Management Access)
 curl -X POST http://localhost:5000/api/login \
   -H "Content-Type: application/json" \
-  -d '{"college_id": "admin", "password": "password", "role": "admin"}'
+  -d '{"college_id": "ADMIN_CSE_001", "password": "admin123"}'
 
-# Use token for admin operations
-curl -X GET http://localhost:5000/api/admin/dashboard/stats \
+# Teacher Login (Dr. B M V Narasimha Raju)
+curl -X POST http://localhost:5000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"college_id": "TEA_001", "password": "teacher123"}'
+
+# Student Login
+curl -X POST http://localhost:5000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"college_id": "21B81A0501", "password": "student123"}'
+
+# Use token for authenticated operations
+curl -X GET http://localhost:5000/api/admin/users \
   -H "Authorization: Bearer <jwt-token>"
 ```
 
@@ -186,34 +208,35 @@ The application uses the following database models:
 - **ClassSchedule**: Timetable for classes
 - **AttendanceRecord**: Records of student attendance
 
-## Key Features
+## Key Features - Project Review Ready
 
-### 🏢 Multi-Institutional Platform
-1. **Institution Registration**: Any college can register and get their own system
-2. **Data Isolation**: Complete separation of data between institutions
-3. **Scalable Architecture**: Supports unlimited institutions and users
+### 🎓 Real College Data Integration
+1. **CSE Department Structure**: Based on actual timetable from your college
+2. **Live Faculty Data**: All teachers from the timetable (Dr. B M V Narasimha Raju, Smt. K Divya Bhavani, etc.)
+3. **Complete Schedule**: Real Monday-Friday timetable with proper subjects and timings
+4. **Production Ready**: Clean, professional interface perfect for project demonstrations
 
-### 👨‍💼 Comprehensive Admin Dashboard
-1. **Real-time Statistics**: Live dashboard with user, branch, and subject counts
-2. **User Management**: Complete CRUD operations for students and teachers
-3. **Academic Structure**: Create branches, semesters, and subjects hierarchically
-4. **Timetable Management**: Visual schedule creation with teacher assignments
-5. **Student Enrollment**: Guided workflow for semester enrollment
+### 👨‍💼 Complete Admin Management
+1. **Timetable Creation**: Visual interface to create and manage class schedules
+2. **Teacher Assignment**: Assign real faculty to actual subjects with time slots
+3. **User Management**: Complete CRUD operations for students and teachers
+4. **Academic Structure**: Manage branches, semesters, and subjects hierarchically
+5. **Student Enrollment**: Semester-wise enrollment with real data
 
-### 🔐 Enterprise Security
+### 🔐 Enterprise Security & Architecture
 1. **JWT Authentication**: Secure token-based authentication system
-2. **Role-Based Access**: Admin, Teacher, Student permissions
-3. **Password Security**: Werkzeug hashed password storage
-4. **API Security**: Input validation and error handling
+2. **Role-Based Access**: Admin, Teacher, Student permissions with data isolation
+3. **Optimized Performance**: Lazy loading for TensorFlow/DeepFace components
+4. **API Security**: Comprehensive input validation and error handling
 
-### 🤖 Smart Features
-1. **Biometric Attendance**: DeepFace integration for face recognition
-2. **AI-Powered Suggestions**: Gemini API for personalized study recommendations
-3. **Smart Routines**: Dynamic daily schedules with AI-generated tasks
-4. **Cross-Platform**: Flutter app for iOS, Android, and Web
+### 🤖 Smart AI Features
+1. **Face Recognition**: DeepFace integration for biometric attendance
+2. **AI Study Suggestions**: Context-aware recommendations based on attendance
+3. **Smart Daily Routines**: Personalized schedules with real timetable integration
+4. **Attendance Predictions**: "Attend next 3 classes to reach 75%" warnings
 
-### 📊 Complete Workflow
-1. **Institution Setup**: Registration → Admin creation → Academic structure
-2. **User Management**: Add teachers and students with role-specific data
-3. **Timetable Creation**: Assign teachers to subjects with schedules
-4. **Daily Operations**: Attendance recording and student routine management
+### 📱 Professional Mobile App
+1. **Clean UI/UX**: Modern Flutter interface with consistent theming
+2. **Real-time Sync**: Live data updates across all user roles
+3. **Responsive Design**: Works perfectly on all screen sizes
+4. **Demo Ready**: Professional quality suitable for project reviews
